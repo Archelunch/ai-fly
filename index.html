@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DON'T PRESS THE BUTTON</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'VT323', monospace;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            color: #ffffff;
+        }
+
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 4em;
+            text-shadow: 3px 3px #ff00ff, 6px 6px #00ffff;
+            margin-bottom: 20px;
+            animation: glitch 1s infinite;
+        }
+
+        #button {
+            width: 50vw;
+            height: 50vw;
+            max-width: 300px;
+            max-height: 300px;
+            background-color: #ff0000;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 20px #ff00ff;
+            transition: all 0.3s ease;
+        }
+
+        #button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px #ff00ff, 0 0 50px #00ffff;
+        }
+
+        #timer {
+            font-size: 2em;
+            margin-top: 20px;
+        }
+
+        #fly {
+            position: absolute;
+            font-size: 2em;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.5s ease;
+        }
+
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .popup h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .popup p {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        .popup button {
+            font-family: 'VT323', monospace;
+            font-size: 1.2em;
+            padding: 10px 20px;
+            background-color: #ff00ff;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .popup button:hover {
+            background-color: #00ffff;
+        }
+
+        @keyframes glitch {
+            0% {
+                text-shadow: 3px 3px #ff00ff, 6px 6px #00ffff;
+            }
+            25% {
+                text-shadow: -3px -3px #ff00ff, -6px -6px #00ffff;
+            }
+            50% {
+                text-shadow: 3px -3px #ff00ff, 6px -6px #00ffff;
+            }
+            75% {
+                text-shadow: -3px 3px #ff00ff, -6px 6px #00ffff;
+            }
+            100% {
+                text-shadow: 3px 3px #ff00ff, 6px 6px #00ffff;
+            }
+        }
+
+        @keyframes flyDeath {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+            50% {
+                transform: rotate(180deg) scale(1.5);
+            }
+            100% {
+                transform: rotate(360deg) scale(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>DON'T PRESS THE BUTTON</h1>
+        <button id="button"></button>
+        <div id="timer">60</div>
+        <div id="fly">🪰</div>
+    </div>
+
+    <script>
+        const button = document.getElementById('button');
+        const timerDisplay = document.getElementById('timer');
+        const fly = document.getElementById('fly');
+        const gameContainer = document.getElementById('game-container');
+
+        let timer;
+        let flyInterval;
+        let wins = 0;
+        let losses = 0;
+        let fliesKilled = 0;
+
+        const loseMessages = [
+            "YOU LOST! Curiosity killed the cat... and your winning streak!",
+            "GAME OVER! The button was too tempting, huh?",
+            "DEFEAT! Your willpower crumbled like a cookie!",
+            "OOPS! You had one job: DON'T press it. Oh well!",
+            "FAIL! The button's siren song was too strong for you!"
+        ];
+
+        const winMessages = [
+            "YOU WIN! Your restraint is legendary!",
+            "VICTORY! You've mastered the art of not pressing buttons!",
+            "CONGRATS! Your patience puts saints to shame!",
+            "AMAZING! You've achieved button-resisting enlightenment!",
+            "WELL DONE! You're the champion of inaction!"
+        ];
+
+        const flyDeathMessages = [
+            "OH NO, WHY DID YOU DO THIS?",
+            "I HAD A FAMILY!",
+            "BUZZ OFF, HUMAN!",
+            "FLY LIVES MATTER!",
+            "I'M CALLING MY LAWYER!"
+        ];
+
+        function startGame() {
+            let timeLeft = 60;
+            button.disabled = false;
+            
+            timer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                
+                if (timeLeft === 0) {
+                    clearInterval(timer);
+                    endGame(true);
+                }
+            }, 1000);
+
+            button.addEventListener('click', () => endGame(false), { once: true });
+            
+            moveFly();
+            flyInterval = setInterval(moveFly, 2000);
+        }
+
+        function endGame(won) {
+            clearInterval(timer);
+            clearInterval(flyInterval);
+            button.disabled = true;
+            fly.style.display = 'none';
+
+            if (won) {
+                wins++;
+                showPopup(winMessages[Math.floor(Math.random() * winMessages.length)]);
+            } else {
+                losses++;
+                showPopup(loseMessages[Math.floor(Math.random() * loseMessages.length)]);
+            }
+        }
+
+        function moveFly() {
+            const maxX = gameContainer.clientWidth - fly.clientWidth;
+            const maxY = gameContainer.clientHeight - fly.clientHeight;
+            
+            const newX = Math.random() * maxX;
+            const newY = Math.random() * maxY;
+            
+            fly.style.left = `${newX}px`;
+            fly.style.top = `${newY}px`;
+        }
+
+        fly.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fliesKilled++;
+            fly.style.animation = 'flyDeath 1s';
+            fly.textContent = '💀';
+            
+            const bubble = document.createElement('div');
+            bubble.textContent = flyDeathMessages[Math.floor(Math.random() * flyDeathMessages.length)];
+            bubble.style.position = 'absolute';
+            bubble.style.left = `${e.clientX}px`;
+            bubble.style.top = `${e.clientY - 30}px`;
+            bubble.style.background = 'white';
+            bubble.style.color = 'black';
+            bubble.style.padding = '5px';
+            bubble.style.borderRadius = '5px';
+            bubble.style.animation = 'fadeOut 2s forwards';
+            gameContainer.appendChild(bubble);
+
+            setTimeout(() => {
+                fly.style.animation = '';
+                fly.textContent = '🪰';
+                gameContainer.removeChild(bubble);
+            }, 1000);
+        });
+
+        function showPopup(message) {
+            const popup = document.createElement('div');
+            popup.className = 'popup';
+            popup.innerHTML = `
+                <h2>${message}</h2>
+                <p>Wins: ${wins} | Losses: ${losses} | Flies Killed: ${fliesKilled}</p>
+                <button onclick="closePopup(this.parentElement)">Play Again</button>
+            `;
+            document.body.appendChild(popup);
+        }
+
+        function closePopup(popup) {
+            document.body.removeChild(popup);
+            startGame();
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
